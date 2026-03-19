@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { ensureIntakeSchema } from './schema';
+import { ensureCoreSchema } from './schema';
 
 export interface SqliteConnectionConfig {
   dbPath?: string;
@@ -17,7 +17,6 @@ export function openDatabaseConnection(config: SqliteConnectionConfig = {}): Dat
   const dbPath = config.dbPath ?? defaultDatabasePath();
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = new Database(dbPath);
-  ensureIntakeSchema(db);
+  ensureCoreSchema(db);
   return db;
 }
-

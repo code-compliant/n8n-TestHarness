@@ -2,14 +2,14 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import Database from 'better-sqlite3';
 
-import { ensureIntakeSchema } from '../../../src/infra/persistence/sqlite/schema';
+import { ensureCoreSchema } from '../../../src/infra/persistence/sqlite/schema';
 import { SQLiteIntakeRepository } from '../../../src/infra/persistence/sqlite/repositories/intake-repository';
 import { IntentService } from '../../../src/services/intent-service';
 
 describe('IntentService', () => {
   const createService = () => {
     const db = new Database(':memory:');
-    ensureIntakeSchema(db);
+    ensureCoreSchema(db);
     const repository = new SQLiteIntakeRepository(db);
     return { db, service: new IntentService(repository) };
   };

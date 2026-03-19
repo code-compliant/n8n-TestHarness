@@ -9,6 +9,16 @@ export interface RequestSummaryContract {
   journey: JourneyType;
   confidence: number;
   blocked: boolean;
+  pattern_suggestions?: Array<{
+    pattern_id: string;
+    name: string;
+    score: number;
+    reason: string;
+  }>;
+  pattern_applied?: {
+    pattern_id: string;
+    source: 'intake' | 'generation';
+  } | null;
 }
 
 const RISK_HINTS: Record<JourneyType, string[]> = {
@@ -62,6 +72,10 @@ export function buildRequestSummary(
   requestId: string,
   intake: NormalizedIntake,
   classification: JourneyClassification,
+  options?: {
+    patternSuggestions?: RequestSummaryContract['pattern_suggestions'];
+    patternApplied?: RequestSummaryContract['pattern_applied'];
+  },
 ): RequestSummaryContract {
   const blocked = classification.confidence < 0.6;
   const journey = classification.journey;
@@ -77,5 +91,7 @@ export function buildRequestSummary(
       ? 'request_clarification_before_execution'
       : NEXT_ACTION_BY_JOURNEY[journey],
     blocked,
+    pattern_suggestions: options?.patternSuggestions,
+    pattern_applied: options?.patternApplied ?? null,
   };
 }

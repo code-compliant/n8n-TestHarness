@@ -102,6 +102,10 @@ function normalizeContextFlags(payload: Record<string, unknown>): Record<string,
   return (payload.contextFlags ?? payload.context_flags ?? null) as Record<string, unknown> | null;
 }
 
+function normalizePatternChoice(payload: Record<string, unknown>): string | null {
+  return (payload.patternChoice ?? payload.pattern_choice ?? payload.applyPatternId ?? null) as string | null;
+}
+
 function redactSensitiveValues(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(redactSensitiveValues);
@@ -153,6 +157,7 @@ function parseIntakePayload(raw: unknown): IntakePayload {
     failurePayload: normalizeFailurePayload(payload),
     policy: normalizePolicy(payload) ?? undefined,
     contextFlags: normalizeContextFlags(payload) ?? undefined,
+    patternChoice: normalizePatternChoice(payload) ?? undefined,
     receivedAt: payload.receivedAt as string | undefined,
     traceId: payload.trace_id as string | undefined,
   };
@@ -280,6 +285,7 @@ export function normalizeIntakePayload(raw: unknown): NormalizedIntake {
     failurePayload: parsed.failurePayload,
     policyHints: parsed.policy,
     contextFlags: parsed.contextFlags,
+    patternChoice: parsed.patternChoice ?? null,
     receivedAt: parsed.receivedAt ?? new Date().toISOString(),
     traceId: parsed.traceId,
     rawPayload: stableStringify(redactSensitiveValues(incoming)),

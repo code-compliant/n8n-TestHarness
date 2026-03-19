@@ -9,6 +9,7 @@ export interface IntakePayload {
   failurePayload?: unknown;
   policy?: Record<string, unknown> | string[];
   contextFlags?: Record<string, unknown>;
+  patternChoice?: string | null;
   receivedAt?: string;
   traceId?: string;
 }
@@ -21,6 +22,7 @@ export interface NormalizedIntake {
   failurePayload?: unknown;
   policyHints?: Record<string, unknown> | string[] | null;
   contextFlags?: Record<string, unknown>;
+  patternChoice?: string | null;
   receivedAt: string;
   traceId?: string;
   rawPayload: string;
@@ -44,6 +46,16 @@ export interface IntakeSummaryArtifact {
   risk_hints: string[];
   next_action: string;
   blocked: boolean;
+  pattern_suggestions?: Array<{
+    pattern_id: string;
+    name: string;
+    score: number;
+    reason: string;
+  }>;
+  pattern_applied?: {
+    pattern_id: string;
+    source: 'intake' | 'generation';
+  } | null;
 }
 
 export interface IntakeRecord {

@@ -1,6 +1,9 @@
 import { IntentService } from '../../services/intent-service';
 import { SQLiteIntakeRepository } from '../../infra/persistence/sqlite/repositories/intake-repository';
 import { openDatabaseConnection } from '../../infra/persistence/sqlite/connection';
+import { SQLitePatternRepository } from '../../infra/persistence/sqlite/repositories/pattern-repository';
+import { SQLiteKnowledgeRepository } from '../../infra/persistence/sqlite/repositories/knowledge-repository';
+import { PatternService } from '../../services/pattern-service';
 
 export interface IntakeCommandInput {
   source?: 'telegram' | 'api' | 'unknown' | string;
@@ -20,7 +23,10 @@ export function handleIntake(payload: IntakeCommandInput, options?: { dbPath?: s
   const db = openDatabaseConnection({ dbPath: options?.dbPath });
   try {
     const repository = new SQLiteIntakeRepository(db);
-    const service = new IntentService(repository);
+    const patternRepository = new SQLitePatternRepository(db);
+    const knowledgeRepository = new SQLiteKnowledgeRepository(db);
+    const patternService = new PatternService(patternRepository, knowledgeRepository);
+    const service = new IntentService(repository, patternService);
     const result = service.capture(payload);
     return {
       status: result.blocked ? 'blocked' : 'pass',
@@ -40,4 +46,3 @@ export const commandManifest = {
   blockingThreshold: 0.6,
   minimumInputs: ['source', 'actor'],
 };
-
