@@ -1,0 +1,60 @@
+# generated: 2026-03-19T13:46:19Z
+# last_updated: 2026-03-19T14:00:00Z
+# project: n8n-TestHarness
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+generated: 2026-03-19T13:46:19Z
+last_updated: 2026-03-19T14:00:00Z
+project: n8n-TestHarness
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # All epics, stories, and retrospectives in order
+  epic-1: in-progress
+  1-1-capture-telegram-request-and-classify-journey-type: review
+  1-2-attach-workflow-target-and-required-context: backlog
+  1-3-render-pre-execution-request-summary: backlog
+  epic-1-retrospective: optional
+  epic-2: backlog
+  2-1-generate-candidate-workflow-from-request-context: backlog
+  2-2-regenerate-upgrades-with-placeholder-preservation: backlog
+  2-3-create-execution-ready-diff-and-section-traceability: backlog
+  epic-2-retrospective: optional
+  epic-3: backlog
+  3-1-run-fixture-based-validation-for-every-candidate: backlog
+  3-2-run-deterministic-test-pass-and-synthetic-trigger-substitutions: backlog
+  3-3-emit-reproducible-evidence-and-rerun-artifacts: backlog
+  3-4-persist-failure-taxonomy-for-promotion-decisions: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-classify-candidates-into-risk-bands: backlog
+  4-2-auto-apply-and-approval-gate-behaviors: backlog
+  4-3-enforce-credential-swap-and-safe-promotions: backlog
+  4-4-create-immutable-audit-chain-and-traceability: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-capture-and-normalize-incident-context: backlog
+  5-2-automatically-initiate-repair-and-route-through-validation: backlog
+  5-3-distinguish-manual-and-automated-recovery-outcomes: backlog
+  epic-5-retrospective: optional
+  epic-6: backlog
+  6-1-detect-missing-or-invalid-credential-bindings: backlog
+  6-2-trigger-setup-skill-and-populate-references: backlog
+  6-3-seed-fixtures-and-execute-browser-fallback: backlog
+  6-4-record-setup-outcomes-for-audit-and-evidence: backlog
+  6-5-support-safe-environment-credential-rotation-actions: backlog
+  epic-6-retrospective: optional
+  epic-7: backlog
+  7-1-publish-and-surface-candidate-state-artifacts: backlog
+  7-2-enforce-role-based-deployment-action-controls: backlog
+  7-3-support-controlled-rollback-from-current-to-known-good-state: backlog
+  epic-7-retrospective: optional
+  epic-8: backlog
+  8-1-persist-reusable-patterns-and-integration-context: backlog
+  8-2-suggest-reuse-during-request-and-generation: backlog
+  8-3-improve-outputs-from-incident-reviews-and-fixtures-growth: backlog
+  epic-8-retrospective: optional
