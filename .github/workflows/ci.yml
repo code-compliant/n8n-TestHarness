@@ -32,23 +32,45 @@ jobs:
 
       - name: Notify Telegram on failure
         if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.event.repository.name }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -c 100)
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          # Security: inputs passed through env: to prevent script injection
+          SHORT_MSG=$(echo "$COMMIT_MSG" | head -c 100)
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=-1003671042608" \
             -d "parse_mode=Markdown" \
-            -d "text=❌ *CI Failed* — \`n8n-TestHarness\`%0ABranch: \`${BRANCH}\`%0ACommit: ${COMMIT_MSG}%0A[View run](${RUN_URL})"
+            -d "text=❌ *CI Failed* — \`${REPO}\`%0ABranch: \`${BRANCH}\`%0AEvent: ${EVENT}%0ACommit: ${SHORT_MSG}%0A[View run](${RUN_URL})"
 
       - name: Notify Telegram on success
         if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.event.repository.name }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          MERGED_FROM: ${{ github.event.pull_request.head.ref }}
         run: |
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -c 100)
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          # Security: inputs passed through env: to prevent script injection
+          SHORT_MSG=$(echo "$COMMIT_MSG" | head -c 100)
+          RUN_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          # Include merged-from branch when this is a main push after PR merge
+          EXTRA=""
+          if [ "${EVENT}" = "push" ] && [ "${BRANCH}" = "main" ] && [ -n "${MERGED_FROM}" ]; then
+            EXTRA="%0AMerged from: \`${MERGED_FROM}\`"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=-1003671042608" \
             -d "parse_mode=Markdown" \
-            -d "text=✅ *CI Passed* — \`n8n-TestHarness\`%0ABranch: \`${BRANCH}\`%0ACommit: ${COMMIT_MSG}%0A[View run](${RUN_URL})"
+            -d "text=✅ *CI Passed* — \`${REPO}\`%0ABranch: \`${BRANCH}\`%0AEvent: ${EVENT}${EXTRA}%0ACommit: ${SHORT_MSG}%0A[View run](${RUN_URL})"
 
