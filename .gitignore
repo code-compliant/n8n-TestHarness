@@ -46,3 +46,4 @@ tmp/**
 # OpenClaw/local agent artifacts (local-only)
 .claw/
 .claw-temp/
+test/**/*.js
