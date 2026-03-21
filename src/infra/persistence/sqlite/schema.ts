@@ -397,6 +397,49 @@ export function ensureKnowledgeSchema(db: Database.Database): void {
   db.exec(migration);
 }
 
+export function ensureRalphLoopSchema(db: Database.Database): void {
+  const migration = `
+    CREATE TABLE IF NOT EXISTS workflow_registry (
+      workflowId TEXT PRIMARY KEY,
+      slug TEXT NOT NULL UNIQUE,
+      contractPath TEXT NOT NULL,
+      contractVersion TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_workflow_registry_slug ON workflow_registry (slug);
+
+    CREATE TABLE IF NOT EXISTS ralph_loops (
+      loopId TEXT PRIMARY KEY,
+      workflowSlug TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('IDLE', 'INITIALISING', 'ITERATING', 'PASS', 'EXHAUSTED', 'ABORTED', 'TIMEOUT')),
+      currentIteration INTEGER NOT NULL DEFAULT 0,
+      maxIterations INTEGER NOT NULL DEFAULT 5,
+      startedAt TEXT NOT NULL,
+      lastActionAt TEXT NOT NULL,
+      completedAt TEXT NULL,
+      dashboardToken TEXT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ralph_loops_workflow ON ralph_loops (workflowSlug);
+    CREATE INDEX IF NOT EXISTS idx_ralph_loops_status ON ralph_loops (status);
+
+    CREATE TABLE IF NOT EXISTS ralph_loop_signals (
+      signalId TEXT PRIMARY KEY,
+      loopId TEXT NOT NULL,
+      signalType TEXT NOT NULL CHECK (signalType IN ('abort', 'pause', 'resume')),
+      triggeredBy TEXT NOT NULL,
+      triggeredAt TEXT NOT NULL,
+      FOREIGN KEY (loopId) REFERENCES ralph_loops(loopId)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ralph_loop_signals_loop ON ralph_loop_signals (loopId);
+  `;
+
+  db.exec(migration);
+}
+
 export function ensureCoreSchema(db: Database.Database): void {
   ensureIntakeSchema(db);
   ensureCandidateSchema(db);
@@ -411,4 +454,5 @@ export function ensureCoreSchema(db: Database.Database): void {
   ensureRotationSchema(db);
   ensureCandidateLifecycleSchema(db);
   ensureKnowledgeSchema(db);
+  ensureRalphLoopSchema(db);
 }

@@ -29,6 +29,13 @@ development_status:
   3-2-run-deterministic-test-pass-and-synthetic-trigger-substitutions: review
   3-3-emit-reproducible-evidence-and-rerun-artifacts: review
   3-4-persist-failure-taxonomy-for-promotion-decisions: review
+  3-5-auto-derive-requirement-spec-from-prd-frs: ready
+  3-6-runtime-execution-via-n8n-api-and-log-capture: ready
+  3-7-ralph-loop-orchestrator: ready
+  3-8-telegram-loop-status-and-ralph-report-emitter: ready
+  3-9-semantic-quality-assessor: ready
+  3-10-quality-contract-lifecycle: ready
+  3-11-ralph-dashboard: ready
   epic-3-retrospective: optional
   epic-4: review
   4-1-classify-candidates-into-risk-bands: review
