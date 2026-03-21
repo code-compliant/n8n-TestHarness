@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { SpecDeriver } from '../../../src/services/spec-deriver';
 
 describe('SpecDeriver', () => {
-  it('generates email workflow spec with required assertions', () => {
+  it('generates email workflow spec with required assertions', async () => {
     const deriver = new SpecDeriver();
     const input = {
       workflowSlug: 'email-triage',
@@ -11,7 +11,7 @@ describe('SpecDeriver', () => {
       functionalRequirements: ['FR13', 'FR14', 'FR19']
     };
 
-    const spec = deriver.deriveSpec(input);
+    const spec = await deriver.deriveSpec(input);
 
     assert.equal(spec.workflowSlug, 'email-triage');
     assert.equal(spec.source, 'auto-derived');
@@ -28,12 +28,12 @@ describe('SpecDeriver', () => {
     assert.equal(classificationCheck.target, 'email_classifier');
   });
 
-  it('includes global error handler for all workflow families', () => {
+  it('includes global error handler for all workflow families', async () => {
     const deriver = new SpecDeriver();
     const testCases = ['email', 'calendar', 'quote', 'generic'];
 
-    testCases.forEach(family => {
-      const spec = deriver.deriveSpec({
+    for (const family of testCases) {
+      const spec = await deriver.deriveSpec({
         workflowSlug: `test-${family}`,
         workflowFamily: family,
         functionalRequirements: []
@@ -42,12 +42,12 @@ describe('SpecDeriver', () => {
       const errorHandler = spec.assertions.find(a => a.type === 'error_handler_check');
       assert.ok(errorHandler, `Missing error handler for ${family}`);
       assert.equal(errorHandler.spec.workflowId, 'RumKLiLA2onXkppj');
-    });
+    }
   });
 
-  it('extracts features from assertions correctly', () => {
+  it('extracts features from assertions correctly', async () => {
     const deriver = new SpecDeriver();
-    const spec = deriver.deriveSpec({
+    const spec = await deriver.deriveSpec({
       workflowSlug: 'multi-feature-workflow',
       workflowFamily: 'email',
       functionalRequirements: []
@@ -59,9 +59,9 @@ describe('SpecDeriver', () => {
     assert.ok(Array.isArray(spec.features));
   });
 
-  it('uses generic template for unknown workflow family', () => {
+  it('uses generic template for unknown workflow family', async () => {
     const deriver = new SpecDeriver();
-    const spec = deriver.deriveSpec({
+    const spec = await deriver.deriveSpec({
       workflowSlug: 'unknown-workflow',
       workflowFamily: 'unknown-type',
       functionalRequirements: []

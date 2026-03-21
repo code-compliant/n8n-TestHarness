@@ -1,10 +1,23 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import Database from 'better-sqlite3';
 import { ensureCoreSchema } from '../../../src/infra/persistence/sqlite/schema';
 import { DashboardServer } from '../../../src/services/dashboard-server';
 
 describe('DashboardServer', () => {
+  let servers: DashboardServer[] = [];
+
+  after(async () => {
+    // Clean up all servers created during tests
+    for (const server of servers) {
+      try {
+        await server.stop();
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  });
+
   it('creates dashboard server with proper configuration', () => {
     const db = new Database(':memory:');
     ensureCoreSchema(db);
@@ -16,6 +29,7 @@ describe('DashboardServer', () => {
     };
 
     const server = new DashboardServer(db, config);
+    servers.push(server);
     assert.ok(server);
 
     db.close();
@@ -26,12 +40,13 @@ describe('DashboardServer', () => {
     ensureCoreSchema(db);
 
     const config = {
-      port: 18942,
-      loopId: 'test-loop-123',
-      token: 'test-token-abc123'
+      port: 18943,
+      loopId: 'test-loop-124',
+      token: 'test-token-abc124'
     };
 
     const server = new DashboardServer(db, config);
+    servers.push(server);
 
     // Access the private method for testing (in real implementation, this would be tested via HTTP)
     const html = (server as any).generateDashboardHTML();

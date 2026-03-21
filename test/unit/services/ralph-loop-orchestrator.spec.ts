@@ -1,3 +1,7 @@
+// Set required environment variables before any imports
+process.env.N8N_API_KEY = "test-key";
+process.env.N8N_API_BASE_URL = "http://localhost:5678/api/v1";
+
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import Database from 'better-sqlite3';
