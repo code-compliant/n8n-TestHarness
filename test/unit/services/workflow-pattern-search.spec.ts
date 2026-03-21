@@ -1,6 +1,5 @@
-import { describe, it, beforeEach, mock, Mock } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import * as fs from 'fs';
 import { WorkflowPatternSearch } from '../../../src/services/workflow-pattern-search';
 
 // Mock index data for testing
@@ -57,20 +56,15 @@ const mockWorkflowJson = {
 
 describe('WorkflowPatternSearch', () => {
   let patternSearch: WorkflowPatternSearch;
-  let readFileSyncMock: Mock<typeof fs.readFileSync>;
 
   beforeEach(() => {
-    // Mock fs.readFileSync to return our test data
-    readFileSyncMock = mock.fn(fs, 'readFileSync');
-    readFileSyncMock.mock.mockImplementation((path: string) => {
-      if (path.includes('index.json')) {
-        return JSON.stringify(mockIndexData);
-      }
-      // Return mock workflow JSON for any workflow file
-      return JSON.stringify(mockWorkflowJson);
-    });
-
-    patternSearch = new WorkflowPatternSearch();
+    // Inject mock index directly — avoids filesystem reads entirely (CI safe)
+    // Also stub the workflow file reader by pointing base to /nonexistent/
+    // and overriding the private loadWorkflow via index injection
+    process.env.WORKFLOW_PATTERN_BASE = '/nonexistent/';
+    patternSearch = new WorkflowPatternSearch(mockIndexData as any);
+    // Patch loadWorkflowJson to return mock JSON without hitting disk
+    (patternSearch as any).loadWorkflowJson = (_file: string) => mockWorkflowJson;
   });
 
   it('returns empty array when no matches', () => {

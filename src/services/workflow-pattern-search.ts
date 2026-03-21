@@ -30,12 +30,16 @@ export class WorkflowPatternSearch {
   private indexPath: string;
   private workflowBasePath: string;
 
-  constructor() {
+  constructor(injectIndex?: WorkflowIndexEntry[]) {
     this.indexPath = process.env.WORKFLOW_PATTERN_INDEX ||
       '/mnt/pgdata/openclaw/workspace/references/awesome-n8n-workflows-index.json';
     this.workflowBasePath = process.env.WORKFLOW_PATTERN_BASE ||
       '/mnt/pgdata/openclaw/workspace/references/';
-    this.loadIndex();
+    if (injectIndex) {
+      this.index = injectIndex;
+    } else {
+      this.loadIndex();
+    }
   }
 
   private loadIndex(): void {
