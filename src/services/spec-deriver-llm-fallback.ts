@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import type { SpecAssertion } from '../domain/models/requirement-spec';
+import { WorkflowPatternSearch } from './workflow-pattern-search';
 
 interface LLMInferenceResult {
   assertions: Array<{
@@ -34,6 +35,8 @@ function queryN8nDocs(query: string): string {
 }
 
 export class SpecDeriverLLMFallback {
+  private patternSearch = new WorkflowPatternSearch();
+
   async inferAssertions(workflowDefinition: unknown, functionalRequirements: string[]): Promise<SpecAssertion[]> {
     // Identify unique node types in the workflow to query relevant docs
     const nodes = (workflowDefinition as any)?.nodes ?? [];
@@ -46,7 +49,15 @@ export class SpecDeriverLLMFallback {
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    const prompt = this.buildInferencePrompt(workflowDefinition, functionalRequirements, docsContext);
+    // Search for relevant community workflow patterns
+    const patternMatches = this.patternSearch.search({ nodeTypes }, 3);
+    const patternsContext = patternMatches.length > 0
+      ? patternMatches
+          .map(match => `- ${match.name}: [${match.nodeTypes.join(', ')}]`)
+          .join('\n')
+      : '';
+
+    const prompt = this.buildInferencePrompt(workflowDefinition, functionalRequirements, docsContext, patternsContext);
 
     try {
       const mockResponse = await this.mockLLMCall(prompt);
@@ -57,7 +68,7 @@ export class SpecDeriverLLMFallback {
     }
   }
 
-  private buildInferencePrompt(workflowDefinition: unknown, functionalRequirements: string[], docsContext: string): string {
+  private buildInferencePrompt(workflowDefinition: unknown, functionalRequirements: string[], docsContext: string, patternsContext: string): string {
     const workflowStr = JSON.stringify(workflowDefinition, null, 2);
 
     return `
@@ -66,7 +77,7 @@ You are analyzing an n8n workflow definition to infer quality assertions.
 Functional Requirements:
 ${functionalRequirements.map(fr => `- ${fr}`).join('\n')}
 
-${docsContext ? `Relevant n8n Documentation:\n${docsContext}\n` : ''}
+${docsContext ? `Relevant n8n Documentation:\n${docsContext}\n` : ''}${patternsContext ? `\nRelevant community workflow patterns:\n${patternsContext}\n` : ''}
 Workflow Definition:
 ${workflowStr}
 

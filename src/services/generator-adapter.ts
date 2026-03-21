@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import type { WorkflowDefinition } from './n8n-api-client';
+import { WorkflowPatternSearch } from './workflow-pattern-search';
 
 export interface GeneratorResponse {
   success: boolean;
@@ -31,6 +32,8 @@ function queryN8nDocsForFix(query: string): string {
 }
 
 export class GeneratorAdapter {
+  private patternSearch = new WorkflowPatternSearch();
+
   async generateWorkflow(prompt: string): Promise<GeneratorResponse> {
     try {
       // Enrich the fix prompt with n8n-docs context before sending to the generator.
@@ -42,8 +45,23 @@ export class GeneratorAdapter {
 
       const docsContext = queryN8nDocsForFix(nodeQuery);
 
-      const enrichedPrompt = docsContext
-        ? `${prompt}\n\n--- Relevant n8n Documentation ---\n${docsContext}`
+      // Search for relevant workflow patterns based on failing node types and workflow family keywords
+      const failingNodeTypes = nodeMatch ? [nodeMatch[1]] : [];
+      const workflowKeywords = this.extractWorkflowKeywords(prompt);
+      const patternMatches = this.patternSearch.search({
+        nodeTypes: failingNodeTypes,
+        keywords: workflowKeywords
+      }, 3);
+
+      // If top match has score >= 4, inject the matched workflow nodes array as reference scaffold
+      let scaffoldContext = '';
+      if (patternMatches.length > 0 && patternMatches[0].score >= 4) {
+        const topMatch = patternMatches[0];
+        scaffoldContext = `\n\n--- Reference workflow scaffold ---\n${topMatch.name} nodes: [${topMatch.nodeTypes.join(', ')}]\n`;
+      }
+
+      const enrichedPrompt = docsContext || scaffoldContext
+        ? `${prompt}\n\n--- Relevant n8n Documentation ---\n${docsContext}${scaffoldContext}`
         : prompt;
 
       const mockWorkflow = await this.mockGeneratorCall(enrichedPrompt);
@@ -58,6 +76,26 @@ export class GeneratorAdapter {
         error: error instanceof Error ? error.message : 'Unknown generator error'
       };
     }
+  }
+
+  private extractWorkflowKeywords(prompt: string): string[] {
+    const keywords: string[] = [];
+    const lowercasePrompt = prompt.toLowerCase();
+
+    // Extract workflow family keywords from the prompt
+    const workflowFamilyTerms = [
+      'email', 'slack', 'webhook', 'api', 'database', 'schedule', 'trigger',
+      'automation', 'notification', 'processing', 'integration', 'sync',
+      'classification', 'analysis', 'monitoring', 'reporting', 'backup'
+    ];
+
+    workflowFamilyTerms.forEach(term => {
+      if (lowercasePrompt.includes(term)) {
+        keywords.push(term);
+      }
+    });
+
+    return keywords;
   }
 
   private async mockGeneratorCall(prompt: string): Promise<WorkflowDefinition> {
