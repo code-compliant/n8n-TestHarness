@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import type { SpecAssertion } from '../domain/models/requirement-spec';
 
 interface LLMInferenceResult {
@@ -9,13 +10,45 @@ interface LLMInferenceResult {
   }>;
 }
 
+/**
+ * Queries the n8n-docs MCP server via mcporter for documentation context.
+ * Returns relevant doc chunks for the given query, or empty string on failure.
+ */
+function queryN8nDocs(query: string): string {
+  try {
+    const result = execSync(
+      `mcporter call n8n-docs.search_n8n_knowledge_sources --args '${JSON.stringify({ query })}'`,
+      { timeout: 15000, encoding: 'utf-8' }
+    );
+    const parsed = JSON.parse(result);
+    const chunks: Array<{ source_url: string; content: string }> =
+      parsed?.results ?? parsed?.output?.results ?? [];
+    return chunks
+      .slice(0, 3)
+      .map(c => `[${c.source_url}]\n${c.content}`)
+      .join('\n\n');
+  } catch {
+    // Non-fatal — proceed without docs context
+    return '';
+  }
+}
+
 export class SpecDeriverLLMFallback {
   async inferAssertions(workflowDefinition: unknown, functionalRequirements: string[]): Promise<SpecAssertion[]> {
-    const prompt = this.buildInferencePrompt(workflowDefinition, functionalRequirements);
+    // Identify unique node types in the workflow to query relevant docs
+    const nodes = (workflowDefinition as any)?.nodes ?? [];
+    const nodeTypes: string[] = [...new Set(nodes.map((n: any) => n.type as string))];
+
+    // Query n8n-docs for each unknown node type (cap at 3 queries to stay fast)
+    const docsContext = nodeTypes
+      .slice(0, 3)
+      .map(t => queryN8nDocs(`How does the n8n ${t} node work and what are its output fields?`))
+      .filter(Boolean)
+      .join('\n\n---\n\n');
+
+    const prompt = this.buildInferencePrompt(workflowDefinition, functionalRequirements, docsContext);
 
     try {
-      // TODO: Integrate with actual LLM client when available
-      // For now, return basic structural assertions based on workflow analysis
       const mockResponse = await this.mockLLMCall(prompt);
       return this.parseInferenceResponse(mockResponse);
     } catch (error) {
@@ -24,7 +57,7 @@ export class SpecDeriverLLMFallback {
     }
   }
 
-  private buildInferencePrompt(workflowDefinition: unknown, functionalRequirements: string[]): string {
+  private buildInferencePrompt(workflowDefinition: unknown, functionalRequirements: string[], docsContext: string): string {
     const workflowStr = JSON.stringify(workflowDefinition, null, 2);
 
     return `
@@ -33,10 +66,11 @@ You are analyzing an n8n workflow definition to infer quality assertions.
 Functional Requirements:
 ${functionalRequirements.map(fr => `- ${fr}`).join('\n')}
 
+${docsContext ? `Relevant n8n Documentation:\n${docsContext}\n` : ''}
 Workflow Definition:
 ${workflowStr}
 
-Based on the node names, types, and functional requirements, generate assertions to verify the workflow behaves correctly.
+Based on the node names, types, documentation context, and functional requirements, generate assertions to verify the workflow behaves correctly.
 
 Return a JSON object with this structure:
 {
@@ -50,12 +84,11 @@ Return a JSON object with this structure:
   ]
 }
 
-Focus on structural and error-handler assertions. Do not include the global error handler check as it's added automatically.
+Focus on structural and error-handler assertions. Do not include the global error handler check as it is added automatically.
 `;
   }
 
   private async mockLLMCall(prompt: string): Promise<LLMInferenceResult> {
-    // Mock implementation - in real scenario this would call an LLM service
     console.log('LLM inference prompt length:', prompt.length);
 
     return {
